@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J.A.R.V.I.S — Mission Control</title>
+<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap');
+
+:root {
+  --c:#00d4ff; --cg:rgba(0,212,255,0.6); --cd:rgba(0,212,255,0.08);
+  --gold:#e8c84a; --gg:rgba(232,200,74,0.6);
+  --red:#ff3a3a; --green:#00ff88; --purple:#aa88ff;
+  --bg:#020c16; --panel:rgba(0,18,36,0.9); --border:rgba(0,212,255,0.12);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:'Share Tech Mono',monospace;color:var(--c);}
+
+#bgCanvas{position:fixed;inset:0;z-index:0;}
+.scan{position:fixed;left:0;right:0;height:1px;z-index:2;background:linear-gradient(90deg,transparent,var(--c),transparent);opacity:.1;animation:scanAnim 12s linear infinite;}
+@keyframes scanAnim{0%{top:0}100%{top:100vh}}
+.crn{position:fixed;z-index:6;}
+.crn::before,.crn::after{content:'';position:absolute;background:var(--c);opacity:.5;}
+.crn::before{width:2px;height:36px;}.crn::after{width:36px;height:2px;}
+.crn.tl{top:10px;left:10px}.crn.tr{top:10px;right:10px;transform:scaleX(-1)}
+.crn.bl{bottom:10px;left:10px;transform:scaleY(-1)}.crn.br{bottom:10px;right:10px;transform:scale(-1,-1)}
+
+/* ── ELEVENLABS WIDGET — visible but tucked in corner ── */
+.widget-holder {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100;
+  opacity: 0.01;
+  pointer-events: all;
+  width: 80px;
+  height: 80px;
+}
+
+.hud{
+  position:relative;z-index:10;
+  width:100vw;height:100vh;
+  display:grid;
+  grid-template-columns:220px 1fr 220px;
+  grid-template-rows:44px 1fr 140px;
+  gap:6px;padding:12px;
+}
+
+/* TOP BAR */
+.topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.topbar-title{font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;letter-spacing:.4em;color:var(--c);text-shadow:0 0 16px var(--cg);}
+.topbar-sub{font-size:.55rem;letter-spacing:.3em;color:rgba(0,212,255,.4);}
+.topbar-right{display:flex;gap:16px;align-items:center;}
+.status-pill{font-size:.5rem;letter-spacing:.2em;padding:3px 10px;border:1px solid var(--c);color:var(--c);animation:pillPulse 2s ease-in-out infinite;}
+.status-pill.gold{border-color:var(--gold);color:var(--gold);}
+.status-pill.red{border-color:var(--red);color:var(--red);animation:blink .7s ease-in-out infinite;}
+.status-pill.green{border-color:var(--green);color:var(--green);}
+@keyframes pillPulse{0%,100%{opacity:.7}50%{opacity:1}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.clock{font-family:'Orbitron',sans-serif;font-size:.75rem;color:var(--c);letter-spacing:.15em;}
+
+/* PANELS */
+.panel-left{grid-column:1;grid-row:2;display:flex;flex-direction:column;gap:6px;}
+.panel-center{grid-column:2;grid-row:2;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;}
+.panel-right{grid-column:3;grid-row:2;display:flex;flex-direction:column;gap:6px;}
+.panel-bottom{grid-column:1/-1;grid-row:3;display:grid;grid-template-columns:1fr 280px 1fr;gap:6px;}
+
+.block{background:var(--panel);border:1px solid var(--border);padding:10px 12px;position:relative;}
+.block::before{content:attr(data-label);position:absolute;top:-8px;left:10px;font-size:.48rem;letter-spacing:.25em;color:var(--c);background:var(--bg);padding:0 6px;text-transform:uppercase;}
+.block-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.block-row:last-child{margin-bottom:0;}
+.block-key{font-size:.58rem;color:rgba(0,212,255,.5);letter-spacing:.1em;}
+.block-val{font-size:.65rem;color:var(--c);font-weight:bold;}
+.block-val.green{color:var(--green);}.block-val.gold{color:var(--gold);}.block-val.red{color:var(--red);}.block-val.purple{color:var(--purple);}
+.bar-wrap{width:100%;height:3px;background:rgba(0,212,255,.1);margin-top:2px;}
+.bar-fill{height:3px;background:var(--c);transition:width .5s ease;}
+.bar-fill.green{background:var(--green);}.bar-fill.gold{background:var(--gold);}.bar-fill.red{background:var(--red);}
+
+#sphere{display:block;}
+
+.objective{position:absolute;bottom:20px;background:rgba(0,14,28,0.92);border:1px solid rgba(0,212,255,.25);padding:12px 20px;text-align:center;min-width:280px;}
+.objective::before{content:'PRIMARY OBJECTIVE';position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:.45rem;letter-spacing:.25em;color:var(--c);background:var(--bg);padding:0 8px;white-space:nowrap;}
+.obj-main{font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.15em;color:rgba(0,212,255,.6);margin-bottom:8px;}
+.obj-metrics{display:flex;gap:20px;justify-content:center;}
+.obj-metric .v{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:900;}
+.obj-metric .l{font-size:.45rem;letter-spacing:.2em;color:rgba(0,212,255,.4);}
+.obj-metric:nth-child(1) .v{color:var(--gold);}.obj-metric:nth-child(2) .v{color:var(--green);}.obj-metric:nth-child(3) .v{color:var(--c);}
+
+.tele-log{display:flex;flex-direction:column;gap:2px;overflow:hidden;flex:1;}
+.tele-line{font-size:.5rem;color:rgba(0,212,255,.45);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:logIn .3s ease both;}
+.tele-line.new{color:rgba(0,212,255,.8);}
+@keyframes logIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+
+/* VOICE ZONE */
+.voice-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:var(--panel);border:1px solid var(--border);position:relative;}
+.voice-zone::before{content:'VOICE INTERFACE';position:absolute;top:-8px;left:10px;font-size:.48rem;letter-spacing:.25em;color:var(--c);background:var(--bg);padding:0 6px;}
+
+.activate-btn{
+  font-family:'Orbitron',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.25em;text-transform:uppercase;
+  background:transparent;border:1px solid var(--c);color:var(--c);
+  padding:10px 32px;cursor:pointer;transition:all .2s;
+  clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+  position:relative;overflow:hidden;
+}
+.activate-btn::before{content:'';position:absolute;inset:0;background:var(--c);transform:translateX(-101%);transition:transform .2s;z-index:-1;}
+.activate-btn:hover::before{transform:translateX(0);}
+.activate-btn:hover{color:var(--bg);box-shadow:0 0 20px var(--cg);}
+.activate-btn.on{border-color:var(--gold);color:var(--gold);animation:btnGlow 1.2s ease-in-out infinite;}
+.activate-btn.on::before{background:var(--gold);}
+@keyframes btnGlow{0%,100%{box-shadow:0 0 16px var(--gg)}50%{box-shadow:0 0 32px var(--gg)}}
+
+.wave-mini{display:flex;gap:2px;align-items:center;height:20px;}
+.wb{width:2px;height:3px;background:var(--c);border-radius:1px;opacity:.2;}
+.wave-mini.on .wb{opacity:1;animation:wm .5s ease-in-out infinite;}
+.wave-mini.gold .wb{background:var(--gold);}.wave-mini.red .wb{background:var(--red);}
+.wb:nth-child(1){animation-delay:0s}.wb:nth-child(2){animation-delay:.06s}.wb:nth-child(3){animation-delay:.12s}
+.wb:nth-child(4){animation-delay:.18s}.wb:nth-child(5){animation-delay:.24s}.wb:nth-child(6){animation-delay:.18s}
+.wb:nth-child(7){animation-delay:.12s}.wb:nth-child(8){animation-delay:.06s}.wb:nth-child(9){animation-delay:0s}
+@keyframes wm{0%,100%{height:3px}50%{height:16px}}
+
+.voice-status{font-size:.5rem;letter-spacing:.2em;color:rgba(0,212,255,.4);text-align:center;height:14px;}
+.voice-status.on{color:var(--gold);}.voice-status.list{color:var(--red);animation:blink .7s ease-in-out infinite;}
+
+.conv-log{background:var(--panel);border:1px solid var(--border);padding:10px 12px;overflow-y:auto;flex:1;position:relative;}
+.conv-log::before{content:'CONVERSATION';position:absolute;top:-8px;left:10px;font-size:.48rem;letter-spacing:.25em;color:var(--c);background:var(--bg);padding:0 6px;}
+.conv-line{margin-bottom:8px;animation:logIn .3s ease both;}
+.conv-who{font-size:.48rem;letter-spacing:.18em;display:block;margin-bottom:1px;}
+.conv-line.you .conv-who{color:rgba(0,212,255,.4);}.conv-line.jarvis .conv-who{color:rgba(232,200,74,.6);}.conv-line.sys .conv-who{display:none;}
+.conv-msg{font-size:.65rem;line-height:1.6;}
+.conv-line.you .conv-msg{color:rgba(180,230,255,.75);}.conv-line.jarvis .conv-msg{color:rgba(255,255,255,.9);}.conv-line.sys .conv-msg{color:rgba(0,212,255,.3);font-style:italic;font-size:.58rem;}
+.conv-log::-webkit-scrollbar{width:2px;}.conv-log::-webkit-scrollbar-thumb{background:rgba(0,212,255,.2);}
+.coords-block{font-size:.5rem;letter-spacing:.12em;color:rgba(0,212,255,.35);line-height:1.8;}
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+<div class="scan"></div>
+<div class="crn tl"></div><div class="crn tr"></div>
+<div class="crn bl"></div><div class="crn br"></div>
+
+<!-- ElevenLabs widget — visible but tiny, allows real interaction -->
+<div class="widget-holder">
+  <elevenlabs-convai agent-id="agent_4601kr9msks7fk1bg2kxfafy9p87"></elevenlabs-convai>
+</div>
+
+<div class="hud">
+
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">J.A.R.V.I.S</div>
+      <div class="topbar-sub">JUST A RATHER VERY INTELLIGENT SYSTEM &nbsp;·&nbsp; ROYAL POUR CO. LLC</div>
+    </div>
+    <div class="topbar-right">
+      <div class="status-pill" id="pill1">● ONLINE</div>
+      <div class="status-pill" id="pill2">⬡ SECURE</div>
+      <div class="status-pill" id="pill3">⬡ ENCRYPTED</div>
+      <div class="status-pill gold">⬡ JARVIS-v1.0</div>
+      <div class="clock" id="clock">00:00:00</div>
+    </div>
+  </div>
+
+  <div class="panel-left">
+    <div class="block" data-label="SYSTEM VITALS">
+      <div class="block-row"><span class="block-key">NEURAL CORE</span><span class="block-val green" id="neural">99.8%</span></div>
+      <div class="bar-wrap"><div class="bar-fill green" id="neuralBar" style="width:99.8%"></div></div>
+      <div class="block-row" style="margin-top:6px"><span class="block-key">MEMORY</span><span class="block-val">4.2 GB</span></div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:42%"></div></div>
+      <div class="block-row" style="margin-top:6px"><span class="block-key">LATENCY</span><span class="block-val green" id="lat">1.2ms</span></div>
+      <div class="bar-wrap"><div class="bar-fill green" style="width:20%"></div></div>
+      <div class="block-row" style="margin-top:6px"><span class="block-key">SIGNAL</span><span class="block-val" id="sig">98.4%</span></div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:98%"></div></div>
+      <div class="block-row" style="margin-top:6px"><span class="block-key">THERMAL</span><span class="block-val green">NOMINAL</span></div>
+      <div class="block-row"><span class="block-key">THROUGHPUT</span><span class="block-val">5.2GB/s</span></div>
+    </div>
+    <div class="block" data-label="TELEMETRY" style="flex:1">
+      <div class="tele-log" id="tele"></div>
+    </div>
+    <div class="block" data-label="COORDINATES">
+      <div class="coords-block">
+        LAT 33.524°N · 117.751°W<br>
+        ALT 0047FT · PACIFIC TIME<br>
+        SESSION · <span id="sessDur">00:00</span><br>
+        LOCATION · LAGUNA BEACH CA
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-center">
+    <canvas id="sphere" width="360" height="360"></canvas>
+    <div class="objective">
+      <div class="obj-main">BUILD $10K MRR — ROYAL POUR CO.</div>
+      <div class="obj-metrics">
+        <div class="obj-metric"><div class="v">$0</div><div class="l">CURRENT MRR</div></div>
+        <div class="obj-metric"><div class="v">0%</div><div class="l">TO TARGET</div></div>
+        <div class="obj-metric"><div class="v" id="daysVal">--</div><div class="l">DAYS ACTIVE</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-right">
+    <div class="block" data-label="OPERATIONS">
+      <div class="block-row"><span class="block-key">WINSTON'S SHIFT</span><span class="block-val green">ACTIVE</span></div>
+      <div class="block-row"><span class="block-key">COGS TARGET</span><span class="block-val gold">≤22%</span></div>
+      <div class="block-row"><span class="block-key">INVENTORY</span><span class="block-val">NOMINAL</span></div>
+      <div class="block-row"><span class="block-key">GUV'NOR BATCH</span><span class="block-val green">READY</span></div>
+      <div class="block-row"><span class="block-key">STAFF TRAINED</span><span class="block-val green">YES</span></div>
+    </div>
+    <div class="block" data-label="BUSINESS INTEL">
+      <div class="block-row"><span class="block-key">ROYAL POUR CO.</span><span class="block-val gold">ACTIVE</span></div>
+      <div class="block-row"><span class="block-key">CREDIT UTIL</span><span class="block-val green">&lt;10%</span></div>
+      <div class="block-row"><span class="block-key">U-VISA STATUS</span><span class="block-val purple">FILED</span></div>
+      <div class="block-row"><span class="block-key">WORK AUTH ETA</span><span class="block-val">2026</span></div>
+    </div>
+    <div class="block" data-label="RECOVERY PROTOCOL" style="flex:1">
+      <div class="block-row"><span class="block-key">SURGERY DATE</span><span class="block-val">APR 21 2025</span></div>
+      <div class="block-row"><span class="block-key">PHASE</span><span class="block-val gold">REMODELING</span></div>
+      <div class="block-row"><span class="block-key">DAYS POST-OP</span><span class="block-val green" id="daysPostOp">--</span></div>
+      <div class="block-row"><span class="block-key">RETURN TO SPORT</span><span class="block-val purple">ON TRACK</span></div>
+      <div style="margin-top:8px">
+        <div class="block-key" style="margin-bottom:4px">RECOVERY PROGRESS</div>
+        <div class="bar-wrap"><div class="bar-fill gold" id="recovBar" style="width:50%"></div></div>
+      </div>
+    </div>
+    <div class="block" data-label="CLEARANCE">
+      <div class="block-row"><span class="block-key">VOICE PRINT</span><span class="block-val green">VERIFIED</span></div>
+      <div class="block-row"><span class="block-key">CLEARANCE</span><span class="block-val gold">LEVEL 5</span></div>
+      <div class="block-row"><span class="block-key">ENCRYPTION</span><span class="block-val green">AES-256</span></div>
+    </div>
+  </div>
+
+  <div class="panel-bottom">
+    <div class="block" data-label="INCOMING DATA STREAM" style="overflow:hidden">
+      <div class="tele-log" id="dataStream"></div>
+    </div>
+
+    <div class="voice-zone">
+      <div class="wave-mini" id="waveMini">
+        <div class="wb"></div><div class="wb"></div><div class="wb"></div>
+        <div class="wb"></div><div class="wb"></div><div class="wb"></div>
+        <div class="wb"></div><div class="wb"></div><div class="wb"></div>
+      </div>
+      <button class="activate-btn" id="activateBtn" onclick="toggleAgent()">⬤ ACTIVATE JARVIS</button>
+      <div class="voice-status" id="voiceStatus">AWAITING ACTIVATION</div>
+      <div class="wave-mini" id="waveMini2">
+        <div class="wb"></div><div class="wb"></div><div class="wb"></div>
+        <div class="wb"></div><div class="wb"></div><div class="wb"></div>
+        <div class="wb"></div><div class="wb"></div><div class="wb"></div>
+      </div>
+    </div>
+
+    <div class="conv-log" id="convLog">
+      <div class="conv-line sys"><span class="conv-msg">» J.A.R.V.I.S v1.0 — All systems nominal. Press SPACE or ACTIVATE to begin, sir.</span></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let isActive = false;
+const sessionStart = Date.now();
+
+// ── FIND AND CLICK THE ELEVENLABS START BUTTON ─────────────────────────
+function findAndClickStart() {
+  const widget = document.querySelector('elevenlabs-convai');
+  if (!widget) return false;
+
+  // Try shadow DOM
+  try {
+    const shadow = widget.shadowRoot;
+    if (shadow) {
+      // Look for any button
+      const allBtns = shadow.querySelectorAll('button');
+      for (const btn of allBtns) {
+        const txt = (btn.textContent || btn.getAttribute('aria-label') || '').toLowerCase();
+        if (txt.includes('start') || txt.includes('call') || txt.includes('speak') || txt.includes('connect')) {
+          btn.click();
+          return true;
+        }
+      }
+      // If no matching button found, click the first button
+      if (allBtns.length > 0) {
+        allBtns[0].click();
+        return true;
+      }
+    }
+  } catch(e) {}
+
+  // Try direct click on widget
+  try { widget.click(); return true; } catch(e) {}
+  return false;
+}
+
+function findAndClickStop() {
+  const widget = document.querySelector('elevenlabs-convai');
+  if (!widget) return;
+  try {
+    const shadow = widget.shadowRoot;
+    if (shadow) {
+      const allBtns = shadow.querySelectorAll('button');
+      for (const btn of allBtns) {
+        const txt = (btn.textContent || btn.getAttribute('aria-label') || '').toLowerCase();
+        if (txt.includes('end') || txt.includes('stop') || txt.includes('disconnect')) {
+          btn.click(); return;
+        }
+      }
+    }
+  } catch(e) {}
+}
+
+function toggleAgent() {
+  if (isActive) {
+    deactivate();
+  } else {
+    activate();
+  }
+}
+
+function activate() {
+  isActive = true;
+  setUIMode('active');
+  addConv('sys', 'Neural link initializing...');
+
+  // Try clicking start immediately, then retry
+  if (!findAndClickStart()) {
+    let attempts = 0;
+    const retry = setInterval(() => {
+      attempts++;
+      if (findAndClickStart() || attempts > 20) clearInterval(retry);
+    }, 300);
+  }
+
+  addTele(`[${ts()}] JARVIS ACTIVATION SEQUENCE INITIATED`);
+}
+
+function deactivate() {
+  isActive = false;
+  findAndClickStop();
+  setUIMode('idle');
+  addConv('sys', 'Neural link disconnected. Standby.');
+  addTele(`[${ts()}] NEURAL LINK DEACTIVATED`);
+}
+
+// ── MONITOR WIDGET STATE ───────────────────────────────────────────────
+setInterval(() => {
+  if (!isActive) return;
+  try {
+    const widget = document.querySelector('elevenlabs-convai');
+    const shadow = widget?.shadowRoot;
+    if (!shadow) return;
+
+    // Check for transcript text to capture conversation
+    const texts = shadow.querySelectorAll('[class*="transcript"], [class*="message"], [class*="text"]');
+    texts.forEach(el => {
+      const t = el.textContent?.trim();
+      if (t && t.length > 2 && !el.dataset.captured) {
+        el.dataset.captured = '1';
+        // Rough heuristic: if it looks like agent output
+        addConv('jarvis', t);
+      }
+    });
+
+    // Detect speaking state from widget classes
+    const root = shadow.querySelector('[class]');
+    if (root) {
+      const cls = root.className || '';
+      const isSpeaking = cls.includes('speak') || cls.includes('agent') || cls.includes('output');
+      const isListening = cls.includes('listen') || cls.includes('user') || cls.includes('input');
+      if (isSpeaking) setUIMode('speaking');
+      else if (isListening) setUIMode('listening');
+      else setUIMode('active');
+    }
+  } catch(e) {}
+}, 400);
+
+// Listen for ElevenLabs events
+window.addEventListener('elevenlabs-convai:call-started', () => {
+  setUIMode('active');
+  addConv('sys', 'J.A.R.V.I.S online. Good evening, sir.');
+  addTele(`[${ts()}] CALL ESTABLISHED — VOICE ACTIVE`);
+});
+
+window.addEventListener('elevenlabs-convai:call-ended', () => {
+  if (isActive) { isActive = false; setUIMode('idle'); }
+});
+
+document.addEventListener('elevenlabs-convai-message', (e) => {
+  try {
+    const d = e.detail;
+    if (d?.source === 'ai') addConv('jarvis', d.message);
+    if (d?.source === 'user') addConv('you', d.message);
+  } catch(e) {}
+});
+
+function setUIMode(mode) {
+  const btn = document.getElementById('activateBtn');
+  const vs  = document.getElementById('voiceStatus');
+  const wm  = document.getElementById('waveMini');
+  const wm2 = document.getElementById('waveMini2');
+  const p3  = document.getElementById('pill3');
+
+  wm.className='wave-mini'; wm2.className='wave-mini';
+
+  if (mode==='idle') {
+    btn.className='activate-btn'; btn.innerHTML='⬤ ACTIVATE JARVIS';
+    vs.className='voice-status'; vs.textContent='AWAITING ACTIVATION';
+    p3.className='status-pill'; p3.textContent='⬡ ENCRYPTED';
+  } else if (mode==='active') {
+    btn.className='activate-btn on'; btn.innerHTML='◈ JARVIS ACTIVE';
+    vs.className='voice-status on'; vs.textContent='● ALWAYS LISTENING';
+    wm.classList.add('on','gold'); wm2.classList.add('on','gold');
+    p3.className='status-pill green'; p3.textContent='● NEURAL LINK';
+  } else if (mode==='listening') {
+    vs.className='voice-status list'; vs.textContent='● LISTENING — SPEAK NOW';
+    wm.classList.add('on','red'); wm2.classList.add('on','red');
+  } else if (mode==='speaking') {
+    vs.className='voice-status on'; vs.textContent='◈ JARVIS SPEAKING';
+    wm.classList.add('on','gold'); wm2.classList.add('on','gold');
+  }
+}
+
+function addConv(type, text) {
+  const log = document.getElementById('convLog');
+  const labels = {you:'YOU',jarvis:'J.A.R.V.I.S',sys:''};
+  const d = document.createElement('div');
+  d.className='conv-line '+type;
+  d.innerHTML=`<span class="conv-who">${labels[type]||''}</span><span class="conv-msg">${esc(text)}</span>`;
+  log.appendChild(d); log.scrollTop=log.scrollHeight;
+}
+
+function ts() {
+  const n=new Date();
+  return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── TELEMETRY ──────────────────────────────────────────────────────────
+const teleMsgs=['audio.stream buffer_clear','signal.verify handshake OK','memory.context loaded','attention.run pattern_scan','signal.trace buffer_clear','core.heartbeat nominal','neural.buffer auto_applied','content.load buffer_clear','voice.engine sync complete','llm.inference ready','auth.token refreshed','api.gateway connected','context.window 128k active','tts.stream buffer_ok','asr.model scribe_realtime','session.ping 1.2ms'];
+
+function addTele(msg){
+  const t=document.getElementById('tele');
+  const d=document.createElement('div');
+  d.className='tele-line new'; d.textContent=msg;
+  t.appendChild(d); setTimeout(()=>d.classList.remove('new'),500);
+  while(t.children.length>14) t.removeChild(t.firstChild);
+}
+function addDataStream(msg){
+  const t=document.getElementById('dataStream');
+  const d=document.createElement('div');
+  d.className='tele-line'; d.textContent=msg;
+  t.appendChild(d);
+  while(t.children.length>8) t.removeChild(t.firstChild);
+}
+setInterval(()=>addTele(`[${ts()}] ${teleMsgs[Math.floor(Math.random()*teleMsgs.length)]}`),2200);
+setInterval(()=>{const msgs=['UPLINK +2.3%/s','PACKET_LOSS 0.001%','SYNC 29-29','AUDIO_BUF OK','NEURAL +0.2ms','STREAM ACTIVE'];addDataStream(`[${ts()}] ${msgs[Math.floor(Math.random()*msgs.length)]}`);},1800);
+
+// ── CLOCK & TIMERS ─────────────────────────────────────────────────────
+setInterval(()=>{
+  const n=new Date();
+  document.getElementById('clock').textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
+  const elapsed=Math.floor((Date.now()-sessionStart)/1000);
+  document.getElementById('sessDur').textContent=String(Math.floor(elapsed/60)).padStart(2,'0')+':'+String(elapsed%60).padStart(2,'0');
+  const surgery=new Date('2025-04-21');
+  const dpo=Math.floor((Date.now()-surgery)/86400000);
+  document.getElementById('daysPostOp').textContent=dpo+' DAYS';
+  document.getElementById('recovBar').style.width=Math.min(100,Math.round((dpo/365)*100))+'%';
+  const launch=new Date('2024-01-01');
+  document.getElementById('daysVal').textContent=Math.floor((Date.now()-launch)/86400000);
+  document.getElementById('lat').textContent=(Math.random()*.5+.8).toFixed(1)+'ms';
+  document.getElementById('sig').textContent=(Math.random()*2+97).toFixed(1)+'%';
+  document.getElementById('neural').textContent=(Math.random()*.5+99.4).toFixed(1)+'%';
+},1000);
+
+// ── KEYBOARD ───────────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input,textarea')) return;
+  if(e.code==='Space'){e.preventDefault();toggleAgent();}
+  if(e.code==='Escape') deactivate();
+});
+
+// ── BG CANVAS ──────────────────────────────────────────────────────────
+(function(){
+  const canvas=document.getElementById('bgCanvas');
+  const ctx=canvas.getContext('2d');
+  function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;draw();}
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.strokeStyle='rgba(0,212,255,0.025)';ctx.lineWidth=1;
+    for(let x=0;x<canvas.width;x+=48){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();}
+    for(let y=0;y<canvas.height;y+=48){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();}
+    const g=ctx.createRadialGradient(canvas.width/2,canvas.height/2,0,canvas.width/2,canvas.height/2,canvas.width*.6);
+    g.addColorStop(0,'rgba(0,80,120,0.12)');g.addColorStop(1,'transparent');
+    ctx.fillStyle=g;ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+  resize();window.addEventListener('resize',resize);
+})();
+
+// ── PARTICLE SPHERE ────────────────────────────────────────────────────
+(function(){
+  const canvas=document.getElementById('sphere');
+  const ctx=canvas.getContext('2d');
+  const W=360,H=360,CX=W/2,CY=H/2,R=140,N=280;
+  const pts=Array.from({length:N},()=>{
+    const u=Math.random(),v=Math.random();
+    const th=2*Math.PI*u,ph=Math.acos(2*v-1);
+    return{ox:R*Math.sin(ph)*Math.cos(th),oy:R*Math.sin(ph)*Math.sin(th),oz:R*Math.cos(ph),x:0,y:0,z:0,size:Math.random()*1.5+.5};
+  });
+  let rot=0,pulse=0;
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    rot+=isActive?0.008:0.003; pulse+=0.04;
+    const cos=Math.cos(rot),sin=Math.sin(rot);
+    pts.forEach(p=>{p.x=p.ox*cos-p.oz*sin;p.y=p.oy;p.z=p.ox*sin+p.oz*cos;});
+    const sorted=[...pts].sort((a,b)=>a.z-b.z);
+    ctx.lineWidth=.4;
+    for(let i=0;i<sorted.length;i++){
+      for(let j=i+1;j<sorted.length;j++){
+        const a=sorted[i],b=sorted[j];
+        const dist=Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2+(a.z-b.z)**2);
+        if(dist<55){
+          const op=(1-dist/55)*0.25*(a.z+R)/(2*R)*(b.z+R)/(2*R);
+          ctx.strokeStyle=isActive?`rgba(232,200,74,${op})`:`rgba(0,212,255,${op})`;
+          ctx.beginPath();ctx.moveTo(CX+a.x,CY+a.y);ctx.lineTo(CX+b.x,CY+b.y);ctx.stroke();
+        }
+      }
+    }
+    sorted.forEach(p=>{
+      const depth=(p.z+R)/(2*R),op=depth*.9+.1,sz=p.size*depth;
+      const pulseSz=isActive?sz*(1+Math.sin(pulse)*.3):sz;
+      ctx.beginPath();ctx.arc(CX+p.x,CY+p.y,pulseSz,0,Math.PI*2);
+      ctx.fillStyle=isActive?`rgba(232,200,74,${op})`:`rgba(0,212,255,${op})`;
+      ctx.fill();
+    });
+    const glowR=isActive?40+Math.sin(pulse)*8:28;
+    const glow=ctx.createRadialGradient(CX,CY,0,CX,CY,glowR);
+    glow.addColorStop(0,isActive?'rgba(232,200,74,0.25)':'rgba(0,212,255,0.15)');
+    glow.addColorStop(1,'transparent');
+    ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+setTimeout(()=>{
+  addTele(`[${ts()}] JARVIS v1.0 BOOT SEQUENCE COMPLETE`);
+  addTele(`[${ts()}] ROYAL POUR CO. NEURAL LINK READY`);
+  addTele(`[${ts()}] VOICE ENGINE ELEVENLABS v3 LOADED`);
+  addTele(`[${ts()}] AWAITING ACTIVATION — PRESS SPACE`);
+},500);
+</script>
+</body>
+</html>
