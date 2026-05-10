@@ -9,7 +9,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap');
 
 :root {
-  --c:#00d4ff; --cg:rgba(0,212,255,0.6); 
+  --c:#00d4ff; --cg:rgba(0,212,255,0.6);
   --gold:#e8c84a; --gg:rgba(232,200,74,0.6);
   --red:#ff3a3a; --green:#00ff88; --purple:#aa88ff;
   --bg:#020c16; --panel:rgba(0,18,36,0.9); --border:rgba(0,212,255,0.12);
@@ -26,36 +26,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 .crn.tl{top:10px;left:10px}.crn.tr{top:10px;right:10px;transform:scaleX(-1)}
 .crn.bl{bottom:10px;left:10px;transform:scaleY(-1)}.crn.br{bottom:10px;right:10px;transform:scale(-1,-1)}
 
-/* ── ELEVENLABS WIDGET — styled to fit HUD ── */
-.widget-zone {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  position: relative;
-  padding: 12px;
-}
-.widget-zone::before {
-  content:'VOICE INTERFACE';
-  position:absolute;top:-8px;left:10px;
-  font-size:.48rem;letter-spacing:.25em;
-  color:var(--c);background:var(--bg);padding:0 6px;
-}
-
-/* Style the ElevenLabs widget to match our HUD */
-elevenlabs-convai {
-  --eleven-labs-primary: #00d4ff;
-  --eleven-labs-background: rgba(0,18,36,0.95);
-  transform: scale(1);
-}
-
-.voice-label {
-  font-family:'Orbitron',sans-serif;
-  font-size:.55rem;letter-spacing:.2em;
-  color:rgba(0,212,255,.5);text-align:center;
+/* COMPLETELY HIDDEN WIDGET */
+elevenlabs-convai{
+  position:fixed !important;
+  bottom:-9999px !important;
+  right:-9999px !important;
+  width:1px !important;
+  height:1px !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+  overflow:hidden !important;
+  z-index:-1 !important;
 }
 
 .hud{
@@ -63,18 +44,20 @@ elevenlabs-convai {
   width:100vw;height:100vh;
   display:grid;
   grid-template-columns:220px 1fr 220px;
-  grid-template-rows:44px 1fr 160px;
+  grid-template-rows:44px 1fr 150px;
   gap:6px;padding:12px;
 }
 
+/* TOP BAR */
 .topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:6px;}
 .topbar-title{font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;letter-spacing:.4em;color:var(--c);text-shadow:0 0 16px var(--cg);}
 .topbar-sub{font-size:.55rem;letter-spacing:.3em;color:rgba(0,212,255,.4);}
 .topbar-right{display:flex;gap:16px;align-items:center;}
-.pill{font-size:.5rem;letter-spacing:.2em;padding:3px 10px;border:1px solid var(--c);color:var(--c);}
+.pill{font-size:.5rem;letter-spacing:.2em;padding:3px 10px;border:1px solid var(--c);color:var(--c);transition:all .3s;}
 .pill.gold{border-color:var(--gold);color:var(--gold);}
-.pill.green{border-color:var(--green);color:var(--green);animation:glow 1.5s ease-in-out infinite;}
-@keyframes glow{0%,100%{opacity:.7}50%{opacity:1}}
+.pill.green{border-color:var(--green);color:var(--green);}
+.pill.red{border-color:var(--red);color:var(--red);animation:blink .7s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 .clock{font-family:'Orbitron',sans-serif;font-size:.75rem;color:var(--c);letter-spacing:.15em;}
 
 .panel-left{grid-column:1;grid-row:2;display:flex;flex-direction:column;gap:6px;}
@@ -82,7 +65,7 @@ elevenlabs-convai {
 .panel-right{grid-column:3;grid-row:2;display:flex;flex-direction:column;gap:6px;}
 .panel-bottom{grid-column:1/-1;grid-row:3;display:grid;grid-template-columns:1fr 320px 1fr;gap:6px;}
 
-.block{background:var(--panel);border:1px solid var(--border);padding:10px 12px;position:relative;}
+.block{background:var(--panel);border:1px solid var(--border);padding:10px 12px;position:relative;transition:border-color .3s;}
 .block::before{content:attr(data-label);position:absolute;top:-8px;left:10px;font-size:.48rem;letter-spacing:.25em;color:var(--c);background:var(--bg);padding:0 6px;text-transform:uppercase;}
 .block-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
 .block-row:last-child{margin-bottom:0;}
@@ -93,9 +76,14 @@ elevenlabs-convai {
 .bar-fill{height:3px;background:var(--c);transition:width .5s;}
 .bar-fill.green{background:var(--green);}.bar-fill.gold{background:var(--gold);}
 
-#sphere{display:block;}
+/* SPHERE */
+#sphere{display:block;transition:filter .3s;}
+.sphere-idle  #sphere{filter:drop-shadow(0 0 8px rgba(0,212,255,0.3));}
+.sphere-listen #sphere{filter:drop-shadow(0 0 20px rgba(255,58,58,0.8));}
+.sphere-speak  #sphere{filter:drop-shadow(0 0 20px rgba(232,200,74,0.8));}
 
-.objective{position:absolute;bottom:20px;background:rgba(0,14,28,0.92);border:1px solid rgba(0,212,255,.25);padding:12px 20px;text-align:center;min-width:280px;}
+/* OBJECTIVE */
+.objective{position:absolute;bottom:20px;background:rgba(0,14,28,0.92);border:1px solid rgba(0,212,255,.25);padding:12px 20px;text-align:center;min-width:280px;transition:border-color .3s;}
 .objective::before{content:'PRIMARY OBJECTIVE';position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:.45rem;letter-spacing:.25em;color:var(--c);background:var(--bg);padding:0 8px;white-space:nowrap;}
 .obj-main{font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.15em;color:rgba(0,212,255,.6);margin-bottom:8px;}
 .obj-metrics{display:flex;gap:20px;justify-content:center;}
@@ -103,11 +91,77 @@ elevenlabs-convai {
 .om .l{font-size:.45rem;letter-spacing:.2em;color:rgba(0,212,255,.4);}
 .om:nth-child(1) .v{color:var(--gold);}.om:nth-child(2) .v{color:var(--green);}.om:nth-child(3) .v{color:var(--c);}
 
+/* TELEMETRY */
 .tele-log{display:flex;flex-direction:column;gap:2px;overflow:hidden;flex:1;}
 .tl{font-size:.5rem;color:rgba(0,212,255,.45);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.tl.new{color:rgba(0,212,255,.85);animation:flash .4s ease both;}
-@keyframes flash{from{color:var(--green)}to{color:rgba(0,212,255,.85)}}
+.tl.new{color:rgba(0,212,255,.85);}
+.tl.alert{color:var(--gold);}
 
+/* VOICE STATUS PANEL */
+.voice-panel{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;background:var(--panel);border:1px solid var(--border);
+  position:relative;transition:border-color .3s;
+}
+.voice-panel::before{content:'NEURAL INTERFACE';position:absolute;top:-8px;left:10px;font-size:.48rem;letter-spacing:.25em;color:var(--c);background:var(--bg);padding:0 6px;}
+
+.reactor-mini{
+  position:relative;width:80px;height:80px;
+  cursor:pointer;
+}
+.ring-mini{position:absolute;border-radius:50%;border:1px solid var(--c);animation:spin linear infinite;transition:border-color .3s;}
+.ring-mini:nth-child(1){inset:0;animation-duration:8s;opacity:.7;}
+.ring-mini:nth-child(2){inset:12px;animation-duration:5s;animation-direction:reverse;opacity:.4;border-style:dashed;}
+.ring-mini:nth-child(3){inset:24px;animation-duration:12s;opacity:.2;}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+.core-mini{
+  position:absolute;inset:32px;border-radius:50%;
+  background:radial-gradient(circle,#fff 0%,var(--c) 45%,rgba(0,70,150,.65) 100%);
+  box-shadow:0 0 20px var(--cg);
+  transition:all .3s;
+}
+
+.voice-status-text{font-family:'Orbitron',sans-serif;font-size:.5rem;letter-spacing:.2em;color:rgba(0,212,255,.5);text-align:center;}
+.voice-hint{font-size:.45rem;letter-spacing:.15em;color:rgba(0,212,255,.3);text-align:center;}
+
+/* WAVEFORM */
+.waveform{display:flex;gap:2px;align-items:center;height:24px;}
+.wb{width:2px;height:3px;background:var(--c);border-radius:1px;opacity:.2;transition:background .3s;}
+.waveform.on .wb{opacity:1;animation:wm .5s ease-in-out infinite;}
+.waveform.gold .wb{background:var(--gold);}
+.waveform.red .wb{background:var(--red);}
+.wb:nth-child(1){animation-delay:0s}.wb:nth-child(2){animation-delay:.06s}.wb:nth-child(3){animation-delay:.12s}
+.wb:nth-child(4){animation-delay:.18s}.wb:nth-child(5){animation-delay:.24s}.wb:nth-child(6){animation-delay:.18s}
+.wb:nth-child(7){animation-delay:.12s}.wb:nth-child(8){animation-delay:.06s}.wb:nth-child(9){animation-delay:0s}
+@keyframes wm{0%,100%{height:3px}50%{height:18px}}
+
+/* LISTENING STATES */
+body.state-idle    .voice-panel{border-color:var(--border);}
+body.state-wake    .voice-panel{border-color:var(--gold);box-shadow:0 0 12px var(--gg);}
+body.state-listen  .voice-panel{border-color:var(--red);box-shadow:0 0 12px rgba(255,58,58,.4);}
+body.state-speak   .voice-panel{border-color:var(--gold);box-shadow:0 0 16px var(--gg);}
+
+body.state-listen .core-mini{background:radial-gradient(circle,#fff 0%,var(--red) 45%,rgba(140,0,0,.65) 100%);box-shadow:0 0 24px rgba(255,58,58,.8);animation:corePulse .5s ease-in-out infinite;}
+body.state-speak  .core-mini{background:radial-gradient(circle,#fff 0%,var(--gold) 45%,rgba(150,90,0,.65) 100%);box-shadow:0 0 24px var(--gg);animation:corePulse .4s ease-in-out infinite;}
+body.state-listen .ring-mini{border-color:var(--red);}
+body.state-speak  .ring-mini{border-color:var(--gold);}
+@keyframes corePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+
+/* CLAP RIPPLE */
+.clap-ripple{
+  position:fixed;top:50%;left:50%;
+  width:10px;height:10px;
+  border-radius:50%;
+  background:rgba(232,200,74,0.6);
+  transform:translate(-50%,-50%);
+  pointer-events:none;z-index:100;
+  animation:ripple .6s ease-out forwards;
+  display:none;
+}
+@keyframes ripple{0%{width:10px;height:10px;opacity:1}100%{width:300px;height:300px;opacity:0;margin-left:-145px;margin-top:-145px;}}
+
+/* CONV LOG */
 .conv-log{background:var(--panel);border:1px solid var(--border);padding:10px 12px;overflow-y:auto;position:relative;}
 .conv-log::before{content:'CONVERSATION';position:absolute;top:-8px;left:10px;font-size:.48rem;letter-spacing:.25em;color:var(--c);background:var(--bg);padding:0 6px;}
 .cl{margin-bottom:8px;}
@@ -119,12 +173,16 @@ elevenlabs-convai {
 .coords{font-size:.5rem;letter-spacing:.12em;color:rgba(0,212,255,.35);line-height:1.8;}
 </style>
 </head>
-<body>
+<body class="state-idle">
 
 <canvas id="bgCanvas"></canvas>
 <div class="scan"></div>
 <div class="crn tl"></div><div class="crn tr"></div>
 <div class="crn bl"></div><div class="crn br"></div>
+<div class="clap-ripple" id="ripple"></div>
+
+<!-- FULLY HIDDEN WIDGET -->
+<elevenlabs-convai agent-id="agent_4601kr9msks7fk1bg2kxfafy9p87"></elevenlabs-convai>
 
 <div class="hud">
 
@@ -136,7 +194,7 @@ elevenlabs-convai {
     </div>
     <div class="topbar-right">
       <div class="pill green">● ONLINE</div>
-      <div class="pill">⬡ SECURE</div>
+      <div class="pill" id="pillStatus">⬡ STANDBY</div>
       <div class="pill gold">⬡ JARVIS-v1.0</div>
       <div class="clock" id="clock">00:00:00</div>
     </div>
@@ -170,7 +228,7 @@ elevenlabs-convai {
   </div>
 
   <!-- CENTER -->
-  <div class="panel-center">
+  <div class="panel-center sphere-idle" id="sphereWrap">
     <canvas id="sphere" width="360" height="360"></canvas>
     <div class="objective">
       <div class="obj-main">BUILD $10K MRR — ROYAL POUR CO.</div>
@@ -218,24 +276,318 @@ elevenlabs-convai {
       <div class="tele-log" id="ds"></div>
     </div>
 
-    <!-- VOICE ZONE — ElevenLabs widget lives here -->
-    <div class="widget-zone">
-      <div class="voice-label">◈ JARVIS NEURAL INTERFACE ◈</div>
-      <elevenlabs-convai agent-id="agent_4601kr9msks7fk1bg2kxfafy9p87"></elevenlabs-convai>
-      <div class="voice-label" id="vLabel">CLICK THE BUTTON ABOVE TO ACTIVATE</div>
+    <!-- VOICE PANEL — NO WIDGET VISIBLE -->
+    <div class="voice-panel">
+      <div class="waveform" id="wave">
+        <div class="wb"></div><div class="wb"></div><div class="wb"></div>
+        <div class="wb"></div><div class="wb"></div><div class="wb"></div>
+        <div class="wb"></div><div class="wb"></div><div class="wb"></div>
+      </div>
+      <div class="reactor-mini" onclick="manualActivate()">
+        <div class="ring-mini"></div>
+        <div class="ring-mini"></div>
+        <div class="ring-mini"></div>
+        <div class="core-mini"></div>
+      </div>
+      <div class="voice-status-text" id="vStatus">STANDBY — CLAP OR SAY "JARVIS"</div>
+      <div class="voice-hint">OR CLICK THE REACTOR ABOVE</div>
+      <div class="waveform" id="wave2">
+        <div class="wb"></div><div class="wb"></div><div class="wb"></div>
+        <div class="wb"></div><div class="wb"></div><div class="wb"></div>
+        <div class="wb"></div><div class="wb"></div><div class="wb"></div>
+      </div>
     </div>
 
     <div class="conv-log" id="convLog">
-      <div class="cl sys"><span class="msg">» J.A.R.V.I.S v1.0 — Click the microphone button to begin, sir.</span></div>
+      <div class="cl sys"><span class="msg">» J.A.R.V.I.S v1.0 — Clap twice or say "Jarvis" to activate, sir.</span></div>
     </div>
 
   </div>
 </div>
 
 <script>
+// ── STATE ──────────────────────────────────────────────────────────────
+let isActive = false;
+let callActive = false;
 const sessionStart = Date.now();
+let lastClap = 0;
+let clapCount = 0;
+let clapTimer = null;
+let audioCtx = null;
+let analyser = null;
+let micStream = null;
+let wakeRecognition = null;
+let isWakeListening = false;
 
-// ── TIMERS ──────────────────────────────────────────────────────────
+// ── WIDGET CONTROL ─────────────────────────────────────────────────────
+function getWidget() { return document.querySelector('elevenlabs-convai'); }
+
+function clickWidgetStart() {
+  const w = getWidget();
+  if (!w) return false;
+  // Try multiple methods to find and click the start button
+  const attempts = [
+    () => { const s=w.shadowRoot; if(s){const b=s.querySelector('button');if(b){b.click();return true;}} return false; },
+    () => { w.dispatchEvent(new MouseEvent('click',{bubbles:true})); return true; },
+    () => { w.click(); return true; }
+  ];
+  for (const fn of attempts) { try { if(fn()) return true; } catch(e){} }
+  return false;
+}
+
+function activateJarvis() {
+  if (callActive) return;
+  callActive = true;
+  isActive = true;
+  setState('wake');
+  showRipple();
+  addTele(`[${ts()}] ★ JARVIS ACTIVATION DETECTED`,'alert');
+  addConv('sys', 'Neural link initiating...');
+
+  // Try to click widget start
+  let tries = 0;
+  const attempt = setInterval(() => {
+    tries++;
+    if (clickWidgetStart() || tries > 30) {
+      clearInterval(attempt);
+      setState('listen');
+      setVStatus('● LISTENING — SPEAK NOW, SIR');
+      addConv('sys', 'J.A.R.V.I.S online. Listening, sir.');
+      addTele(`[${ts()}] NEURAL LINK ESTABLISHED`,'alert');
+    }
+  }, 200);
+}
+
+function manualActivate() {
+  if (!callActive) activateJarvis();
+  else deactivate();
+}
+
+function deactivate() {
+  callActive = false;
+  isActive = false;
+  setState('idle');
+  setVStatus('STANDBY — CLAP OR SAY "JARVIS"');
+  addConv('sys','Neural link disconnected. Standby.');
+  addTele(`[${ts()}] NEURAL LINK DEACTIVATED`);
+}
+
+// ── CLAP DETECTION ─────────────────────────────────────────────────────
+async function initAudio() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    micStream = stream;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.3;
+    source.connect(analyser);
+
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    let lastVolume = 0;
+    let clapCooldown = false;
+
+    function detectClap() {
+      analyser.getByteFrequencyData(data);
+      // Average high frequencies (clap signature)
+      let sum = 0;
+      for (let i = 10; i < data.length; i++) sum += data[i];
+      const vol = sum / (data.length - 10);
+
+      // Clap = sudden loud spike
+      if (vol > 80 && lastVolume < 30 && !clapCooldown) {
+        clapCooldown = true;
+        setTimeout(() => clapCooldown = false, 300);
+        handleClap();
+      }
+      lastVolume = vol;
+      requestAnimationFrame(detectClap);
+    }
+    detectClap();
+    addTele(`[${ts()}] CLAP DETECTION ACTIVE`,'alert');
+    initWakeWord();
+  } catch(e) {
+    addTele(`[${ts()}] MIC ACCESS REQUIRED FOR CLAP DETECTION`);
+  }
+}
+
+function handleClap() {
+  const now = Date.now();
+  if (now - lastClap < 1000) {
+    clapCount++;
+    if (clapCount >= 1 && !callActive) {
+      // Double clap detected
+      clapCount = 0;
+      addTele(`[${ts()}] CLAP DETECTED — ACTIVATING`,'alert');
+      activateJarvis();
+    }
+  } else {
+    clapCount = 1;
+  }
+  lastClap = now;
+  clearTimeout(clapTimer);
+  clapTimer = setTimeout(() => clapCount = 0, 1500);
+}
+
+// ── WAKE WORD ──────────────────────────────────────────────────────────
+function initWakeWord() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+
+  function startWake() {
+    if (isWakeListening || callActive) return;
+    try {
+      wakeRecognition = new SR();
+      wakeRecognition.continuous = false;
+      wakeRecognition.interimResults = false;
+      wakeRecognition.lang = 'en-US';
+
+      wakeRecognition.onresult = (e) => {
+        const txt = e.results[0][0].transcript.toLowerCase().trim();
+        addTele(`[${ts()}] WAKE SCAN: "${txt}"`);
+        if (txt.includes('jarvis') || txt.includes('travis') || txt.includes('davis')) {
+          if (!callActive) {
+            addTele(`[${ts()}] WAKE WORD DETECTED`,'alert');
+            activateJarvis();
+          }
+        }
+      };
+
+      wakeRecognition.onend = () => {
+        isWakeListening = false;
+        // Restart wake word listening after short delay
+        if (!callActive) setTimeout(startWake, 500);
+      };
+
+      wakeRecognition.onerror = () => {
+        isWakeListening = false;
+        if (!callActive) setTimeout(startWake, 2000);
+      };
+
+      wakeRecognition.start();
+      isWakeListening = true;
+    } catch(e) {
+      setTimeout(startWake, 2000);
+    }
+  }
+
+  startWake();
+
+  // Restart wake listening when call ends
+  setInterval(() => {
+    if (!callActive && !isWakeListening) startWake();
+  }, 3000);
+}
+
+// ── UI STATES ──────────────────────────────────────────────────────────
+function setState(state) {
+  document.body.className = 'state-' + state;
+  const sw = document.getElementById('sphereWrap');
+  sw.className = 'panel-center sphere-' + state;
+  const w1 = document.getElementById('wave');
+  const w2 = document.getElementById('wave2');
+  const pill = document.getElementById('pillStatus');
+
+  w1.className = 'waveform'; w2.className = 'waveform';
+
+  if (state === 'idle') {
+    pill.className = 'pill'; pill.textContent = '⬡ STANDBY';
+  } else if (state === 'wake') {
+    pill.className = 'pill gold'; pill.textContent = '◈ WAKING';
+    w1.classList.add('on','gold'); w2.classList.add('on','gold');
+  } else if (state === 'listen') {
+    pill.className = 'pill red'; pill.textContent = '● LISTENING';
+    w1.classList.add('on','red'); w2.classList.add('on','red');
+  } else if (state === 'speak') {
+    pill.className = 'pill gold'; pill.textContent = '◈ SPEAKING';
+    w1.classList.add('on','gold'); w2.classList.add('on','gold');
+  }
+}
+
+function setVStatus(txt) {
+  document.getElementById('vStatus').textContent = txt;
+}
+
+// ── RIPPLE EFFECT ──────────────────────────────────────────────────────
+function showRipple() {
+  const r = document.getElementById('ripple');
+  r.style.display = 'block';
+  r.style.animation = 'none';
+  r.offsetHeight; // reflow
+  r.style.animation = 'ripple .6s ease-out forwards';
+  setTimeout(() => r.style.display = 'none', 700);
+}
+
+// ── WIDGET EVENT LISTENERS ─────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const w = getWidget();
+  if (!w) return;
+
+  w.addEventListener('conversationstart', () => {
+    setState('listen');
+    setVStatus('● LISTENING — SPEAK NOW, SIR');
+  });
+
+  w.addEventListener('conversationend', () => {
+    callActive = false;
+    isActive = false;
+    setState('idle');
+    setVStatus('STANDBY — CLAP OR SAY "JARVIS"');
+    addConv('sys','Session ended. Standing by, sir.');
+  });
+
+  w.addEventListener('message', (e) => {
+    try {
+      const d = e.detail || e.data;
+      if (!d) return;
+      if (d.type === 'agent_response' || d.role === 'assistant') {
+        const t = d.message || d.text || '';
+        if (t) { addConv('jarvis', t); setState('speak'); setVStatus('◈ J.A.R.V.I.S SPEAKING'); }
+      } else if (d.type === 'user_transcript' || d.role === 'user') {
+        const t = d.message || d.text || '';
+        if (t) { addConv('you', t); setState('listen'); setVStatus('● PROCESSING...'); }
+      }
+    } catch(e){}
+  });
+
+  w.addEventListener('modechange', (e) => {
+    try {
+      const m = e.detail?.mode || '';
+      if (m === 'speaking') { setState('speak'); setVStatus('◈ J.A.R.V.I.S SPEAKING'); }
+      else if (m === 'listening') { setState('listen'); setVStatus('● LISTENING — SPEAK NOW, SIR'); }
+      else if (callActive) { setState('listen'); }
+    } catch(e){}
+  });
+
+  // Init audio after user gesture (click anywhere)
+  document.addEventListener('click', () => {
+    if (!audioCtx) initAudio();
+  }, { once: true });
+
+  // Also try on load
+  setTimeout(initAudio, 2000);
+});
+
+// ── TELEMETRY ──────────────────────────────────────────────────────────
+const tmsgs=['audio.stream buffer_clear','signal.verify OK','memory.context loaded','core.heartbeat nominal','voice.engine sync OK','llm.inference ready','auth.token refreshed','api.gateway connected','tts.stream buffer_ok','session.ping 1.2ms','neural.buffer applied','asr.scribe_realtime','wake.word monitoring','clap.detect threshold:80'];
+function ts(){const n=new Date();return`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;}
+function addTele(m,cls=''){const t=document.getElementById('tele');const d=document.createElement('div');d.className='tl '+(cls?'new '+cls:'');d.textContent=m;t.appendChild(d);while(t.children.length>14)t.removeChild(t.firstChild);}
+function addDS(m){const t=document.getElementById('ds');const d=document.createElement('div');d.className='tl';d.textContent=m;t.appendChild(d);while(t.children.length>8)t.removeChild(t.firstChild);}
+setInterval(()=>addTele(`[${ts()}] ${tmsgs[Math.floor(Math.random()*tmsgs.length)]}`),2500);
+setInterval(()=>{const m=['UPLINK +2.3%/s','PACKET_LOSS 0.001%','AUDIO_BUF OK','NEURAL +0.2ms','STREAM ACTIVE','WAKE.SCAN OK'];addDS(`[${ts()}] ${m[Math.floor(Math.random()*m.length)]}`);},1800);
+
+// ── CONV LOG ───────────────────────────────────────────────────────────
+function addConv(type,text){
+  const log=document.getElementById('convLog');
+  const labels={you:'YOU',jarvis:'J.A.R.V.I.S',sys:''};
+  const d=document.createElement('div');
+  d.className='cl '+type;
+  d.innerHTML=`<span class="who">${labels[type]||''}</span><span class="msg">${String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`;
+  log.appendChild(d);log.scrollTop=log.scrollHeight;
+}
+
+// ── TIMERS ─────────────────────────────────────────────────────────────
 setInterval(()=>{
   const n=new Date();
   document.getElementById('clock').textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
@@ -250,42 +602,14 @@ setInterval(()=>{
   document.getElementById('neural').textContent=(Math.random()*.5+99.4).toFixed(1)+'%';
 },1000);
 
-// ── TELEMETRY ────────────────────────────────────────────────────────
-const msgs=['audio.stream buffer_clear','signal.verify OK','memory.context loaded','core.heartbeat nominal','voice.engine sync OK','llm.inference ready','auth.token refreshed','api.gateway connected','tts.stream buffer_ok','session.ping 1.2ms','neural.buffer applied','asr.scribe_realtime'];
-function ts(){const n=new Date();return`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;}
-function addTele(m){const t=document.getElementById('tele');const d=document.createElement('div');d.className='tl new';d.textContent=m;t.appendChild(d);while(t.children.length>14)t.removeChild(t.firstChild);}
-function addDS(m){const t=document.getElementById('ds');const d=document.createElement('div');d.className='tl';d.textContent=m;t.appendChild(d);while(t.children.length>8)t.removeChild(t.firstChild);}
-setInterval(()=>addTele(`[${ts()}] ${msgs[Math.floor(Math.random()*msgs.length)]}`),2200);
-setInterval(()=>{const m=['UPLINK +2.3%/s','PACKET_LOSS 0.001%','AUDIO_BUF OK','NEURAL +0.2ms','STREAM ACTIVE'];addDS(`[${ts()}] ${m[Math.floor(Math.random()*m.length)]}`);},1800);
-
-// ── CONVERSATION CAPTURE ─────────────────────────────────────────────
-function addConv(type,text){
-  const log=document.getElementById('convLog');
-  const labels={you:'YOU',jarvis:'J.A.R.V.I.S',sys:''};
-  const d=document.createElement('div');
-  d.className='cl '+type;
-  d.innerHTML=`<span class="who">${labels[type]||''}</span><span class="msg">${String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`;
-  log.appendChild(d);log.scrollTop=log.scrollHeight;
-}
-
-// Listen for ElevenLabs widget events
-document.addEventListener('elevenlabs-convai:message', e=>{
-  try{
-    const d=e.detail;
-    if(d?.source==='ai'||d?.role==='assistant') addConv('jarvis',d.message||d.text||'');
-    if(d?.source==='user'||d?.role==='user') addConv('you',d.message||d.text||'');
-  }catch(err){}
+// ── KEYBOARD FALLBACK ──────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input,textarea')) return;
+  if(e.code==='Space'){e.preventDefault(); if(!callActive) activateJarvis(); else deactivate();}
+  if(e.code==='Escape') deactivate();
 });
 
-window.addEventListener('message', e=>{
-  try{
-    const d=e.data;
-    if(d?.type==='agent_response') addConv('jarvis',d.message||'');
-    if(d?.type==='user_transcript') addConv('you',d.message||'');
-  }catch(err){}
-});
-
-// ── BACKGROUND ───────────────────────────────────────────────────────
+// ── BACKGROUND ─────────────────────────────────────────────────────────
 (function(){
   const c=document.getElementById('bgCanvas'),ctx=c.getContext('2d');
   function resize(){c.width=window.innerWidth;c.height=window.innerHeight;draw();}
@@ -301,7 +625,7 @@ window.addEventListener('message', e=>{
   resize();window.addEventListener('resize',resize);
 })();
 
-// ── SPHERE ───────────────────────────────────────────────────────────
+// ── PARTICLE SPHERE ─────────────────────────────────────────────────────
 (function(){
   const c=document.getElementById('sphere'),ctx=c.getContext('2d');
   const W=360,H=360,CX=W/2,CY=H/2,R=140,N=260;
@@ -311,28 +635,57 @@ window.addEventListener('message', e=>{
     return{ox:R*Math.sin(ph)*Math.cos(th),oy:R*Math.sin(ph)*Math.sin(th),oz:R*Math.cos(ph),size:Math.random()*1.5+.5,x:0,y:0,z:0};
   });
   let rot=0,pulse=0;
+
+  function getColor() {
+    const s = document.body.className;
+    if (s.includes('listen')) return [255,58,58];
+    if (s.includes('speak') || s.includes('wake')) return [232,200,74];
+    return [0,212,255];
+  }
+
   function draw(){
-    ctx.clearRect(0,0,W,H);rot+=.003;pulse+=.04;
+    ctx.clearRect(0,0,W,H);
+    const speed = isActive ? 0.008 : 0.003;
+    rot += speed; pulse += 0.04;
     const cos=Math.cos(rot),sin=Math.sin(rot);
     pts.forEach(p=>{p.x=p.ox*cos-p.oz*sin;p.y=p.oy;p.z=p.ox*sin+p.oz*cos;});
     const sorted=[...pts].sort((a,b)=>a.z-b.z);
+    const [r,g,b] = getColor();
+
     ctx.lineWidth=.4;
     for(let i=0;i<sorted.length;i++)for(let j=i+1;j<sorted.length;j++){
-      const a=sorted[i],b=sorted[j],d=Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2+(a.z-b.z)**2);
-      if(d<55){const op=(1-d/55)*0.25*(a.z+R)/(2*R)*(b.z+R)/(2*R);ctx.strokeStyle=`rgba(0,212,255,${op})`;ctx.beginPath();ctx.moveTo(CX+a.x,CY+a.y);ctx.lineTo(CX+b.x,CY+b.y);ctx.stroke();}
+      const a=sorted[i],bb=sorted[j];
+      const d=Math.sqrt((a.x-bb.x)**2+(a.y-bb.y)**2+(a.z-bb.z)**2);
+      if(d<55){
+        const op=(1-d/55)*0.25*(a.z+R)/(2*R)*(bb.z+R)/(2*R);
+        ctx.strokeStyle=`rgba(${r},${g},${b},${op})`;
+        ctx.beginPath();ctx.moveTo(CX+a.x,CY+a.y);ctx.lineTo(CX+bb.x,CY+bb.y);ctx.stroke();
+      }
     }
-    sorted.forEach(p=>{const dep=(p.z+R)/(2*R),op=dep*.9+.1,sz=p.size*dep;ctx.beginPath();ctx.arc(CX+p.x,CY+p.y,sz,0,Math.PI*2);ctx.fillStyle=`rgba(0,212,255,${op})`;ctx.fill();});
-    const g=ctx.createRadialGradient(CX,CY,0,CX,CY,28);g.addColorStop(0,'rgba(0,212,255,0.15)');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    sorted.forEach(p=>{
+      const dep=(p.z+R)/(2*R),op=dep*.9+.1;
+      const sz = isActive ? p.size*dep*(1+Math.sin(pulse+dep)*0.2) : p.size*dep;
+      ctx.beginPath();ctx.arc(CX+p.x,CY+p.y,sz,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${r},${g},${b},${op})`;ctx.fill();
+    });
+
+    const glowR = isActive ? 45+Math.sin(pulse)*10 : 28;
+    const glow=ctx.createRadialGradient(CX,CY,0,CX,CY,glowR);
+    glow.addColorStop(0,`rgba(${r},${g},${b},${isActive?0.25:0.12})`);
+    glow.addColorStop(1,'transparent');
+    ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);
     requestAnimationFrame(draw);
   }
   draw();
 })();
 
+// ── INIT ───────────────────────────────────────────────────────────────
 setTimeout(()=>{
-  addTele(`[${ts()}] JARVIS v1.0 BOOT COMPLETE`);
-  addTele(`[${ts()}] ROYAL POUR CO. LINK READY`);
-  addTele(`[${ts()}] CLICK MIC BUTTON TO ACTIVATE`);
-},500);
+  addTele(`[${ts()}] JARVIS v1.0 BOOT COMPLETE`,'alert');
+  addTele(`[${ts()}] WAKE WORD ENGINE READY`,'alert');
+  addTele(`[${ts()}] CLAP DETECTION STANDBY`);
+  addTele(`[${ts()}] CLICK ANYWHERE TO ENABLE MIC`);
+},600);
 </script>
 </body>
 </html>
