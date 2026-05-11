@@ -4,8 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>J.A.R.V.I.S — Mission Control</title>
-<!-- ElevenLabs Client SDK - correct CDN -->
-<script src="https://cdn.jsdelivr.net/npm/@elevenlabs/client@latest/dist/index.umd.js"></script>
+<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap');
 :root{--c:#00d4ff;--cg:rgba(0,212,255,0.6);--gold:#e8c84a;--gg:rgba(232,200,74,0.6);--red:#ff3a3a;--green:#00ff88;--purple:#aa88ff;--bg:#020c16;--panel:rgba(0,18,36,0.9);--border:rgba(0,212,255,0.12);}
@@ -18,28 +17,60 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 .crn::before{width:2px;height:36px;}.crn::after{width:36px;height:2px;}
 .crn.tl{top:10px;left:10px}.crn.tr{top:10px;right:10px;transform:scaleX(-1)}.crn.bl{bottom:10px;left:10px;transform:scaleY(-1)}.crn.br{bottom:10px;right:10px;transform:scale(-1,-1)}
 
-/* BOOT */
-#boot{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;transition:opacity .8s ease;}
-.bt{font-family:'Orbitron',sans-serif;font-size:2.8rem;font-weight:900;letter-spacing:.4em;color:var(--c);text-shadow:0 0 30px var(--cg);}
-.bs{font-size:.65rem;letter-spacing:.4em;color:rgba(0,212,255,.4);}
-.bootR{position:relative;width:160px;height:160px;cursor:pointer;animation:bPulse 1.5s ease-in-out infinite;}
-@keyframes bPulse{0%,100%{filter:drop-shadow(0 0 10px rgba(0,212,255,.4))}50%{filter:drop-shadow(0 0 30px rgba(0,212,255,.8))}}
-.bRing{position:absolute;border-radius:50%;border:1.5px solid var(--c);animation:spin linear infinite;}
-.bRing:nth-child(1){inset:0;animation-duration:8s;opacity:.8}.bRing:nth-child(2){inset:16px;animation-duration:5s;animation-direction:reverse;opacity:.5;border-style:dashed}.bRing:nth-child(3){inset:32px;animation-duration:13s;opacity:.25}
-@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-.bCore{position:absolute;inset:50px;border-radius:50%;background:radial-gradient(circle,#fff 0%,var(--c) 45%,rgba(0,70,150,.65) 100%);box-shadow:0 0 40px var(--cg);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:.38rem;font-weight:700;color:rgba(0,20,50,.9);text-align:center;}
-.bHint{font-size:.6rem;letter-spacing:.3em;color:rgba(0,212,255,.5);animation:blink 1.5s ease-in-out infinite;}
-@keyframes blink{0%,100%{opacity:.5}50%{opacity:1}}
-.bErr{font-size:.55rem;color:var(--red);letter-spacing:.15em;text-align:center;min-height:20px;}
+/* ── ELEVENLABS WIDGET STYLING ─────────────────────────────────────── */
+/* Override all default widget styles to match our HUD */
+elevenlabs-convai {
+  display: block !important;
+  position: relative !important;
+  width: 100% !important;
+  height: auto !important;
+
+  /* CSS custom properties that ElevenLabs widget respects */
+  --elevenlabs-widget-border-radius: 0px;
+  --elevenlabs-widget-background: rgba(0,18,36,0.95);
+  --elevenlabs-widget-primary-color: #00d4ff;
+  --elevenlabs-widget-text-color: #00d4ff;
+  --elevenlabs-widget-button-background: transparent;
+  --elevenlabs-widget-button-color: #00d4ff;
+}
+
+/* Force widget shadow DOM styling via ::part if available */
+elevenlabs-convai::part(button) {
+  background: transparent !important;
+  border: 1px solid #00d4ff !important;
+  color: #00d4ff !important;
+  border-radius: 0 !important;
+  font-family: 'Orbitron', sans-serif !important;
+}
+
+/* Widget wrapper — positions widget inside the voice zone */
+.widget-wrap {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Override any floating/fixed positioning from widget */
+.widget-wrap elevenlabs-convai,
+.widget-wrap elevenlabs-convai * {
+  position: relative !important;
+  bottom: auto !important;
+  right: auto !important;
+  left: auto !important;
+  top: auto !important;
+}
 
 /* HUD */
-.hud{position:relative;z-index:10;width:100vw;height:100vh;display:grid;grid-template-columns:220px 1fr 220px;grid-template-rows:44px 1fr 150px;gap:6px;padding:12px;}
+.hud{position:relative;z-index:10;width:100vw;height:100vh;display:grid;grid-template-columns:220px 1fr 220px;grid-template-rows:44px 1fr 160px;gap:6px;padding:12px;}
 .topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:6px;}
 .tt{font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;letter-spacing:.4em;color:var(--c);text-shadow:0 0 16px var(--cg);}
 .ts{font-size:.55rem;letter-spacing:.3em;color:rgba(0,212,255,.4);}
 .tr{display:flex;gap:16px;align-items:center;}
 .pill{font-size:.5rem;letter-spacing:.2em;padding:3px 10px;border:1px solid var(--c);color:var(--c);transition:all .3s;}
 .pill.gold{border-color:var(--gold);color:var(--gold);}.pill.green{border-color:var(--green);color:var(--green);}.pill.red{border-color:var(--red);color:var(--red);animation:blink .7s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 .clock{font-family:'Orbitron',sans-serif;font-size:.75rem;color:var(--c);letter-spacing:.15em;}
 .pl{grid-column:1;grid-row:2;display:flex;flex-direction:column;gap:6px;}
 .pc{grid-column:2;grid-row:2;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;}
@@ -50,19 +81,23 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 .brow{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}.brow:last-child{margin-bottom:0;}
 .bk{font-size:.58rem;color:rgba(0,212,255,.5);letter-spacing:.1em;}
 .bv{font-size:.65rem;color:var(--c);font-weight:bold;}
-.bv.green{color:var(--green);}.bv.gold{color:var(--gold);}.bv.red{color:var(--red);}.bv.purple{color:var(--purple);}
+.bv.green{color:var(--green);}.bv.gold{color:var(--gold);}.bv.purple{color:var(--purple);}
 .bw{width:100%;height:3px;background:rgba(0,212,255,.1);margin-top:2px;}
 .bf{height:3px;background:var(--c);transition:width .5s;}.bf.green{background:var(--green);}.bf.gold{background:var(--gold);}
-.reactor{position:relative;width:220px;height:220px;user-select:none;}
+
+/* REACTOR */
+.reactor{position:relative;width:200px;height:200px;user-select:none;}
 .ring{position:absolute;border-radius:50%;border:1.5px solid var(--c);animation:spin linear infinite;transition:border-color .4s;}
-.ring:nth-child(1){inset:0;animation-duration:10s;opacity:.75}.ring:nth-child(2){inset:20px;animation-duration:7s;animation-direction:reverse;opacity:.42;border-style:dashed}.ring:nth-child(3){inset:40px;animation-duration:16s;opacity:.22}.ring:nth-child(4){inset:58px;animation-duration:5.5s;animation-direction:reverse;opacity:.14;border-style:dotted}
-.core{position:absolute;inset:70px;border-radius:50%;background:radial-gradient(circle,#fff 0%,var(--c) 45%,rgba(0,70,150,.65) 100%);box-shadow:0 0 40px var(--cg),0 0 80px rgba(0,212,255,.2);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:.38rem;font-weight:700;color:rgba(0,20,50,.9);text-align:center;letter-spacing:.05em;transition:all .35s;}
+.ring:nth-child(1){inset:0;animation-duration:10s;opacity:.75}.ring:nth-child(2){inset:18px;animation-duration:7s;animation-direction:reverse;opacity:.42;border-style:dashed}.ring:nth-child(3){inset:36px;animation-duration:16s;opacity:.22}.ring:nth-child(4){inset:54px;animation-duration:5.5s;animation-direction:reverse;opacity:.14;border-style:dotted}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.core{position:absolute;inset:64px;border-radius:50%;background:radial-gradient(circle,#fff 0%,var(--c) 45%,rgba(0,70,150,.65) 100%);box-shadow:0 0 40px var(--cg),0 0 80px rgba(0,212,255,.2);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:.36rem;font-weight:700;color:rgba(0,20,50,.9);text-align:center;letter-spacing:.05em;transition:all .35s;}
 .reactor.listening .core{background:radial-gradient(circle,#fff 0%,var(--red) 45%,rgba(140,0,0,.65) 100%);box-shadow:0 0 50px rgba(255,58,58,.8);animation:rPulse .5s ease-in-out infinite;}
 .reactor.listening .ring{border-color:var(--red);}
 .reactor.speaking .core{background:radial-gradient(circle,#fff 0%,var(--gold) 45%,rgba(150,90,0,.65) 100%);box-shadow:0 0 50px var(--gg);animation:rPulse .4s ease-in-out infinite;}
 .reactor.speaking .ring{border-color:var(--gold);}
 @keyframes rPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
-.objective{position:absolute;bottom:16px;background:rgba(0,14,28,0.92);border:1px solid rgba(0,212,255,.25);padding:10px 18px;text-align:center;min-width:260px;}
+
+.objective{position:absolute;bottom:14px;background:rgba(0,14,28,0.92);border:1px solid rgba(0,212,255,.25);padding:10px 18px;text-align:center;min-width:260px;}
 .objective::before{content:'PRIMARY OBJECTIVE';position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:.45rem;letter-spacing:.25em;color:var(--c);background:var(--bg);padding:0 8px;white-space:nowrap;}
 .om2{font-family:'Orbitron',sans-serif;font-size:.6rem;letter-spacing:.15em;color:rgba(0,212,255,.6);margin-bottom:6px;}
 .oms{display:flex;gap:16px;justify-content:center;}
@@ -72,17 +107,21 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 .tele-log{display:flex;flex-direction:column;gap:2px;overflow:hidden;flex:1;}
 .tl{font-size:.5rem;color:rgba(0,212,255,.45);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .tl.hi{color:var(--gold);}
-.vzone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:var(--panel);border:1px solid var(--border);position:relative;transition:border-color .3s;}
-.vzone::before{content:'NEURAL INTERFACE';position:absolute;top:-8px;left:10px;font-size:.48rem;letter-spacing:.25em;color:var(--c);background:var(--bg);padding:0 6px;}
-.vzone.active{border-color:var(--gold);box-shadow:0 0 12px var(--gg);}.vzone.listening{border-color:var(--red);box-shadow:0 0 12px rgba(255,58,58,.4);}
-.wf{display:flex;gap:2px;align-items:center;height:22px;}
+
+/* VOICE ZONE */
+.vzone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:var(--panel);border:1px solid var(--border);position:relative;transition:border-color .3s;overflow:hidden;}
+.vzone::before{content:'NEURAL INTERFACE';position:absolute;top:-8px;left:10px;font-size:.48rem;letter-spacing:.25em;color:var(--c);background:var(--bg);padding:0 6px;z-index:10;}
+.vzone.active{border-color:var(--gold);box-shadow:0 0 12px var(--gg);}
+.vzone.listening{border-color:var(--red);box-shadow:0 0 12px rgba(255,58,58,.4);}
+.wf{display:flex;gap:2px;align-items:center;height:18px;pointer-events:none;}
 .wb{width:2px;height:3px;background:var(--c);border-radius:1px;opacity:.2;}
 .wf.on .wb{opacity:1;animation:wm .5s ease-in-out infinite;}
 .wf.gold .wb{background:var(--gold);}.wf.red .wb{background:var(--red);}
 .wb:nth-child(1){animation-delay:0s}.wb:nth-child(2){animation-delay:.06s}.wb:nth-child(3){animation-delay:.12s}.wb:nth-child(4){animation-delay:.18s}.wb:nth-child(5){animation-delay:.24s}.wb:nth-child(6){animation-delay:.18s}.wb:nth-child(7){animation-delay:.12s}.wb:nth-child(8){animation-delay:.06s}.wb:nth-child(9){animation-delay:0s}
-@keyframes wm{0%,100%{height:3px}50%{height:18px}}
-.vstxt{font-family:'Orbitron',sans-serif;font-size:.5rem;letter-spacing:.2em;color:rgba(0,212,255,.5);text-align:center;transition:color .3s;}
+@keyframes wm{0%,100%{height:3px}50%{height:14px}}
+.vstxt{font-family:'Orbitron',sans-serif;font-size:.48rem;letter-spacing:.18em;color:rgba(0,212,255,.5);text-align:center;pointer-events:none;}
 .vstxt.active{color:var(--gold);}.vstxt.listening{color:var(--red);animation:blink .7s ease-in-out infinite;}
+
 .conv-log{background:var(--panel);border:1px solid var(--border);padding:10px 12px;overflow-y:auto;position:relative;}
 .conv-log::before{content:'CONVERSATION';position:absolute;top:-8px;left:10px;font-size:.48rem;letter-spacing:.25em;color:var(--c);background:var(--bg);padding:0 6px;}
 .cl{margin-bottom:8px;}
@@ -99,19 +138,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 <div class="scan"></div>
 <div class="crn tl"></div><div class="crn tr"></div><div class="crn bl"></div><div class="crn br"></div>
 
-<!-- BOOT SCREEN -->
-<div id="boot">
-  <div class="bt">J.A.R.V.I.S</div>
-  <div class="bs">ROYAL POUR CO. · MISSION CONTROL v1.0</div>
-  <div class="bootR" id="bootBtn" onclick="initialize()">
-    <div class="bRing"></div><div class="bRing"></div><div class="bRing"></div>
-    <div class="bCore">TAP TO<br>INITIALIZE</div>
-  </div>
-  <div class="bHint">► ONE TAP — THEN ALWAYS LISTENING ◄</div>
-  <div class="bErr" id="bootErr"></div>
-</div>
-
-<!-- HUD -->
 <div class="hud">
   <div class="topbar">
     <div><div class="tt">J.A.R.V.I.S</div><div class="ts">JUST A RATHER VERY INTELLIGENT SYSTEM · ROYAL POUR CO. LLC</div></div>
@@ -122,6 +148,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
       <div class="clock" id="clock">00:00:00</div>
     </div>
   </div>
+
   <div class="pl">
     <div class="block" data-label="SYSTEM VITALS">
       <div class="brow"><span class="bk">NEURAL CORE</span><span class="bv green" id="neural">99.8%</span></div>
@@ -140,12 +167,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
       <div class="coords">LAT 33.524°N · 117.751°W<br>ALT 0047FT · PACIFIC TIME<br>SESSION · <span id="sess">00:00</span><br>LOCATION · LAGUNA BEACH CA</div>
     </div>
   </div>
+
   <div class="pc">
     <div class="reactor" id="reactor">
       <div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="ring"></div>
       <div class="core" id="coreText">ACTIVE<br>ONLINE</div>
     </div>
-    <canvas id="sphereCanvas" width="220" height="220" style="position:absolute;pointer-events:none;z-index:5;"></canvas>
+    <canvas id="sphereCanvas" width="200" height="200" style="position:absolute;pointer-events:none;z-index:5;"></canvas>
     <div class="objective">
       <div class="om2">BUILD $10K MRR — ROYAL POUR CO.</div>
       <div class="oms">
@@ -155,6 +183,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
       </div>
     </div>
   </div>
+
   <div class="pr">
     <div class="block" data-label="OPERATIONS">
       <div class="brow"><span class="bk">WINSTON'S SHIFT</span><span class="bv green">ACTIVE</span></div>
@@ -179,165 +208,258 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
       <div class="brow"><span class="bk">CLEARANCE</span><span class="bv gold">LEVEL 5</span></div>
     </div>
   </div>
+
   <div class="pb">
     <div class="block" data-label="DATA STREAM" style="overflow:hidden"><div class="tele-log" id="ds"></div></div>
+
+    <!-- VOICE ZONE — widget lives here, styled to match -->
     <div class="vzone" id="vzone">
       <div class="wf" id="wf1"><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div></div>
-      <div class="vstxt" id="vstxt">NEURAL LINK ACTIVE — ALWAYS LISTENING</div>
+      <div class="vstxt" id="vstxt">CLICK BELOW TO ACTIVATE JARVIS</div>
+      <!-- THE WIDGET — sits naturally in the flow -->
+      <div class="widget-wrap">
+        <elevenlabs-convai agent-id="agent_4601kr9msks7fk1bg2kxfafy9p87"></elevenlabs-convai>
+      </div>
       <div class="wf" id="wf2"><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div></div>
     </div>
-    <div class="conv-log" id="convLog"><div class="cl sys"><span class="msg">» Tap the reactor to initialize J.A.R.V.I.S, sir.</span></div></div>
+
+    <div class="conv-log" id="convLog">
+      <div class="cl sys"><span class="msg">» J.A.R.V.I.S v1.0 — Click Start Call in the Neural Interface to begin, sir.</span></div>
+    </div>
   </div>
 </div>
 
 <script>
-const AGENT_ID = 'agent_4601kr9msks7fk1bg2kxfafy9p87';
 const sessionStart = Date.now();
-let conversation = null;
 let booted = false;
 
-async function initialize() {
-  if (booted) return;
-  booted = true;
+// ── WATCH WIDGET STATE ─────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const w = document.querySelector('elevenlabs-convai');
+  if (!w) return;
 
-  const bootErr = document.getElementById('bootErr');
-  bootErr.textContent = 'INITIALIZING...';
+  // Poll shadow DOM for state changes
+  setInterval(() => {
+    try {
+      const shadow = w.shadowRoot;
+      if (!shadow) return;
 
-  try {
-    // Request mic permission first
-    await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      // Detect if call is active by looking for active state indicators
+      const html = shadow.innerHTML || '';
+      const isActive = html.includes('active') || html.includes('connected') || html.includes('listening') || html.includes('speaking');
 
-    // Find the Conversation class from the SDK
-    let ConvClass = null;
-
-    // Try all possible global names the UMD build might use
-    const candidates = [
-      () => window.ElevenLabsClient?.Conversation,
-      () => window.Conversation,
-      () => window['@elevenlabs/client']?.Conversation,
-      () => window.ElevenLabs?.Conversation,
-      () => {
-        // Search all globals for one with startSession
-        for (const key of Object.keys(window)) {
-          try {
-            if (window[key] && typeof window[key].startSession === 'function') return window[key];
-            if (window[key] && window[key].Conversation && typeof window[key].Conversation.startSession === 'function') return window[key].Conversation;
-          } catch(e) {}
+      // Try to detect mode from shadow DOM classes
+      const allEls = shadow.querySelectorAll('[class]');
+      let mode = '';
+      allEls.forEach(el => {
+        const c = el.className || '';
+        if (typeof c === 'string') {
+          if (c.includes('speak')) mode = 'speaking';
+          else if (c.includes('listen') && !mode) mode = 'listening';
+          else if (c.includes('active') && !mode) mode = 'active';
         }
-        return null;
-      }
-    ];
+      });
 
-    for (const fn of candidates) {
-      try { ConvClass = fn(); if (ConvClass) break; } catch(e) {}
-    }
+      if (mode === 'speaking') setReactor('speaking');
+      else if (mode === 'listening') setReactor('listening');
 
-    if (!ConvClass) {
-      throw new Error('SDK not found. Check CDN load.');
-    }
+    } catch(e) {}
+  }, 500);
 
-    bootErr.textContent = 'CONNECTING TO JARVIS...';
+  // ElevenLabs widget events
+  w.addEventListener('conversationstart', () => {
+    booted = true;
+    setReactor('listening');
+    setVzone('active');
+    setVstxt('active', '● NEURAL LINK ACTIVE — ALWAYS LISTENING');
+    setPill('active');
+    addConv('sys', 'J.A.R.V.I.S online. Always listening, sir.');
+    addTele(`[${ts()}] NEURAL LINK ESTABLISHED`, 'hi');
+  });
 
-    conversation = await ConvClass.startSession({
-      agentId: AGENT_ID,
-      onConnect: ({ conversationId }) => {
-        addTele(`[${ts()}] CONNECTED: ${conversationId}`, 'hi');
-        setUI('active', '● ALWAYS LISTENING, SIR');
-        addConv('sys', 'J.A.R.V.I.S online. Neural link established. Always listening, sir.');
-        // Fade boot screen
-        const boot = document.getElementById('boot');
-        boot.style.opacity = '0';
-        setTimeout(() => boot.style.display = 'none', 800);
-      },
-      onDisconnect: () => {
-        addTele(`[${ts()}] DISCONNECTED`);
-        setUI('idle', '⬡ DISCONNECTED');
-      },
-      onMessage: (msg) => {
-        const text = msg.message || msg.text || '';
-        const src = msg.source || msg.role || '';
-        if (!text) return;
-        if (src === 'ai' || src.includes('agent') || src.includes('assistant')) {
-          addConv('jarvis', text);
-        } else if (src === 'user' || src.includes('human')) {
-          addConv('you', text);
-        }
-      },
-      onModeChange: ({ mode }) => {
-        if (mode === 'speaking') {
-          setReactor('speaking');
-          setUI('active', '◈ J.A.R.V.I.S SPEAKING');
-        } else if (mode === 'listening') {
-          setReactor('listening');
-          setUI('listening', '● LISTENING — SPEAK NOW, SIR');
-        } else {
-          setReactor('');
-          setUI('active', '● ALWAYS LISTENING, SIR');
-        }
-      },
-      onError: (err) => {
-        addTele(`[${ts()}] ERROR: ${JSON.stringify(err)}`);
-        bootErr.textContent = `ERROR: ${JSON.stringify(err)}`;
-      }
-    });
-
-    addTele(`[${ts()}] SESSION STARTED`, 'hi');
-
-  } catch(e) {
+  w.addEventListener('conversationend', () => {
     booted = false;
-    bootErr.textContent = `FAILED: ${e.message}`;
-    addTele(`[${ts()}] BOOT ERROR: ${e.message}`);
-    console.error('JARVIS boot error:', e);
-  }
+    setReactor('');
+    setVzone('');
+    setVstxt('', 'CLICK START CALL TO ACTIVATE');
+    setPill('idle');
+    addConv('sys', 'Session ended. Standing by, sir.');
+  });
+
+  w.addEventListener('message', (e) => {
+    try {
+      const d = e.detail || e.data;
+      if (!d) return;
+      const src = d.source || d.role || d.type || '';
+      const txt = d.message || d.text || '';
+      if (!txt) return;
+      if (src.includes('agent') || src.includes('assistant') || src === 'ai') {
+        addConv('jarvis', txt);
+        setReactor('speaking');
+        setVstxt('active', '◈ J.A.R.V.I.S SPEAKING');
+      } else if (src.includes('user') || src === 'human') {
+        addConv('you', txt);
+        setReactor('listening');
+        setVstxt('listening', '● PROCESSING...');
+      }
+    } catch(e) {}
+  });
+
+  w.addEventListener('modechange', (e) => {
+    try {
+      const m = e.detail?.mode || '';
+      if (m === 'speaking') {
+        setReactor('speaking');
+        setVzone('active');
+        setVstxt('active', '◈ J.A.R.V.I.S SPEAKING');
+        setPill('speaking');
+      } else if (m === 'listening') {
+        setReactor('listening');
+        setVzone('listening');
+        setVstxt('listening', '● LISTENING — SPEAK NOW, SIR');
+        setPill('listening');
+      } else if (booted) {
+        setReactor('');
+        setVzone('active');
+        setVstxt('active', '● ALWAYS LISTENING, SIR');
+        setPill('active');
+      }
+    } catch(e) {}
+  });
+
+  // Apply dark styling to widget after it loads
+  setTimeout(styleWidget, 1000);
+  setTimeout(styleWidget, 3000);
+});
+
+// ── STYLE THE WIDGET TO MATCH HUD ─────────────────────────────────────
+function styleWidget() {
+  try {
+    const w = document.querySelector('elevenlabs-convai');
+    const shadow = w?.shadowRoot;
+    if (!shadow) return;
+
+    // Inject CSS into shadow DOM
+    const style = document.createElement('style');
+    style.textContent = `
+      * { box-sizing: border-box; }
+      
+      /* Main container */
+      :host, [class*="widget"], [class*="container"], [class*="root"] {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        font-family: 'Share Tech Mono', monospace !important;
+      }
+
+      /* The call button */
+      button, [class*="button"], [class*="btn"] {
+        background: transparent !important;
+        border: 1px solid #00d4ff !important;
+        color: #00d4ff !important;
+        border-radius: 0 !important;
+        font-family: 'Orbitron', sans-serif !important;
+        font-size: 0.5rem !important;
+        letter-spacing: 0.2em !important;
+        text-transform: uppercase !important;
+        padding: 8px 20px !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+      }
+
+      button:hover {
+        background: rgba(0,212,255,0.1) !important;
+        box-shadow: 0 0 12px rgba(0,212,255,0.4) !important;
+      }
+
+      /* Hide any white backgrounds, logos, branding */
+      [class*="powered"], [class*="brand"], [class*="logo"], [class*="footer"] {
+        display: none !important;
+      }
+
+      /* Text */
+      p, span, div { 
+        color: rgba(0,212,255,0.6) !important;
+        font-size: 0.55rem !important;
+        letter-spacing: 0.1em !important;
+      }
+
+      /* Active/speaking state */
+      [class*="active"] button, [class*="speaking"] button {
+        border-color: #e8c84a !important;
+        color: #e8c84a !important;
+        box-shadow: 0 0 12px rgba(232,200,74,0.4) !important;
+      }
+
+      /* Any overlay or popup — force dark */
+      [class*="modal"], [class*="popup"], [class*="overlay"], [class*="panel"] {
+        background: rgba(0,14,28,0.98) !important;
+        border: 1px solid rgba(0,212,255,0.2) !important;
+        border-radius: 0 !important;
+        color: #00d4ff !important;
+      }
+
+      /* Waveform / animation elements */
+      [class*="wave"], [class*="audio"], [class*="visualiz"] {
+        color: #00d4ff !important;
+        fill: #00d4ff !important;
+      }
+    `;
+    shadow.appendChild(style);
+  } catch(e) {}
 }
 
+// ── UI HELPERS ─────────────────────────────────────────────────────────
 function setReactor(state) {
   const r = document.getElementById('reactor');
   const c = document.getElementById('coreText');
   r.className = 'reactor';
   if (state === 'listening') { r.classList.add('listening'); c.textContent = 'RECOG\nACTIVE'; }
   else if (state === 'speaking') { r.classList.add('speaking'); c.textContent = 'VOICE\nOUTPUT'; }
-  else { c.textContent = 'ALWAYS\nONLINE'; }
+  else { c.textContent = 'ACTIVE\nONLINE'; }
 }
 
-function setUI(state, txt) {
-  const p = document.getElementById('pStatus');
+function setVzone(state) {
   const vz = document.getElementById('vzone');
-  const vs = document.getElementById('vstxt');
   const w1 = document.getElementById('wf1');
   const w2 = document.getElementById('wf2');
-  vs.textContent = txt;
-  vz.className = 'vzone'; w1.className = 'wf'; w2.className = 'wf'; vs.className = 'vstxt';
-  p.className = 'pill';
-  if (state === 'listening') {
-    p.className='pill red'; p.textContent='● LISTENING';
-    vz.classList.add('listening'); vs.classList.add('listening');
-    w1.classList.add('on','red'); w2.classList.add('on','red');
-  } else if (state === 'active') {
-    p.className='pill gold'; p.textContent='◈ ACTIVE';
-    vz.classList.add('active'); vs.classList.add('active');
-    w1.classList.add('on','gold'); w2.classList.add('on','gold');
-  } else {
-    p.textContent='⬡ STANDBY';
-  }
+  vz.className = 'vzone'; w1.className = 'wf'; w2.className = 'wf';
+  if (state === 'active') { vz.classList.add('active'); w1.classList.add('on','gold'); w2.classList.add('on','gold'); }
+  else if (state === 'listening') { vz.classList.add('listening'); w1.classList.add('on','red'); w2.classList.add('on','red'); }
+}
+
+function setVstxt(state, txt) {
+  const vs = document.getElementById('vstxt');
+  vs.textContent = txt; vs.className = 'vstxt';
+  if (state === 'active') vs.classList.add('active');
+  else if (state === 'listening') vs.classList.add('listening');
+}
+
+function setPill(state) {
+  const p = document.getElementById('pStatus');
+  const map = { idle:['pill','⬡ STANDBY'], active:['pill gold','◈ ACTIVE'], listening:['pill red','● LISTENING'], speaking:['pill gold','◈ SPEAKING'] };
+  const [cls, txt] = map[state] || map.idle;
+  p.className = cls; p.textContent = txt;
 }
 
 function addConv(type, text) {
   const log = document.getElementById('convLog');
-  const labels = {you:'YOU', jarvis:'J.A.R.V.I.S', sys:''};
+  const labels = {you:'YOU',jarvis:'J.A.R.V.I.S',sys:''};
   const d = document.createElement('div');
   d.className = 'cl ' + type;
   d.innerHTML = `<span class="who">${labels[type]||''}</span><span class="msg">${String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`;
   log.appendChild(d); log.scrollTop = log.scrollHeight;
 }
 
-const tmsgs=['audio.stream buffer_clear','signal.verify OK','memory.context loaded','core.heartbeat nominal','voice.engine sync OK','llm.inference ready','auth.token refreshed','api.gateway OK','tts.stream OK','session.ping 1ms','neural.buffer applied','asr.realtime active'];
+// ── TELEMETRY ──────────────────────────────────────────────────────────
+const tmsgs=['audio.stream buffer_clear','signal.verify OK','memory.context loaded','core.heartbeat nominal','voice.engine sync OK','llm.inference ready','auth.token refreshed','api.gateway OK','tts.stream OK','session.ping 1ms','neural.buffer applied','asr.realtime'];
 function ts(){const n=new Date();return`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;}
 function addTele(m,cls=''){const t=document.getElementById('tele');const d=document.createElement('div');d.className='tl'+(cls?' '+cls:'');d.textContent=m;t.appendChild(d);while(t.children.length>14)t.removeChild(t.firstChild);}
 function addDS(m){const t=document.getElementById('ds');const d=document.createElement('div');d.className='tl';d.textContent=m;t.appendChild(d);while(t.children.length>8)t.removeChild(t.firstChild);}
 setInterval(()=>addTele(`[${ts()}] ${tmsgs[Math.floor(Math.random()*tmsgs.length)]}`),2500);
 setInterval(()=>{const m=['UPLINK +2.3%/s','PACKET 0.001%','AUDIO OK','NEURAL +0.2ms','STREAM ON'];addDS(`[${ts()}] ${m[Math.floor(Math.random()*m.length)]}`);},1800);
 
+// ── TIMERS ─────────────────────────────────────────────────────────────
 setInterval(()=>{
   const n=new Date();
   document.getElementById('clock').textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
@@ -352,16 +474,16 @@ setInterval(()=>{
   document.getElementById('neural').textContent=(Math.random()*.5+99.4).toFixed(1)+'%';
 },1000);
 
-// BG
+// ── BG ─────────────────────────────────────────────────────────────────
 (function(){const c=document.getElementById('bgCanvas'),ctx=c.getContext('2d');function resize(){c.width=window.innerWidth;c.height=window.innerHeight;draw();}function draw(){ctx.clearRect(0,0,c.width,c.height);ctx.strokeStyle='rgba(0,212,255,0.025)';ctx.lineWidth=1;for(let x=0;x<c.width;x+=48){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,c.height);ctx.stroke();}for(let y=0;y<c.height;y+=48){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(c.width,y);ctx.stroke();}const g=ctx.createRadialGradient(c.width/2,c.height/2,0,c.width/2,c.height/2,c.width*.6);g.addColorStop(0,'rgba(0,80,120,0.12)');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.fillRect(0,0,c.width,c.height);}resize();window.addEventListener('resize',resize);})();
 
-// SPHERE
-(function(){const c=document.getElementById('sphereCanvas'),ctx=c.getContext('2d');const W=220,H=220,CX=W/2,CY=H/2,R=90,N=200;const pts=Array.from({length:N},()=>{const u=Math.random(),v=Math.random();const th=2*Math.PI*u,ph=Math.acos(2*v-1);return{ox:R*Math.sin(ph)*Math.cos(th),oy:R*Math.sin(ph)*Math.sin(th),oz:R*Math.cos(ph),size:Math.random()*1.2+.4,x:0,y:0,z:0};});
+// ── SPHERE ─────────────────────────────────────────────────────────────
+(function(){const c=document.getElementById('sphereCanvas'),ctx=c.getContext('2d');const W=200,H=200,CX=W/2,CY=H/2,R=80,N=180;const pts=Array.from({length:N},()=>{const u=Math.random(),v=Math.random();const th=2*Math.PI*u,ph=Math.acos(2*v-1);return{ox:R*Math.sin(ph)*Math.cos(th),oy:R*Math.sin(ph)*Math.sin(th),oz:R*Math.cos(ph),size:Math.random()*1.2+.4,x:0,y:0,z:0};});
 let rot=0,pulse=0;
 function getColor(){const r=document.getElementById('reactor');if(r.classList.contains('listening'))return[255,58,58];if(r.classList.contains('speaking'))return[232,200,74];return[0,212,255];}
-function draw(){ctx.clearRect(0,0,W,H);rot+=booted?.006:.002;pulse+=.04;const cos=Math.cos(rot),sin=Math.sin(rot);pts.forEach(p=>{p.x=p.ox*cos-p.oz*sin;p.y=p.oy;p.z=p.ox*sin+p.oz*cos;});const sorted=[...pts].sort((a,b)=>a.z-b.z);const[r,g,b]=getColor();ctx.lineWidth=.35;for(let i=0;i<sorted.length;i++)for(let j=i+1;j<sorted.length;j++){const a=sorted[i],bb=sorted[j];const d=Math.sqrt((a.x-bb.x)**2+(a.y-bb.y)**2+(a.z-bb.z)**2);if(d<44){const op=(1-d/44)*0.22*(a.z+R)/(2*R)*(bb.z+R)/(2*R);ctx.strokeStyle=`rgba(${r},${g},${b},${op})`;ctx.beginPath();ctx.moveTo(CX+a.x,CY+a.y);ctx.lineTo(CX+bb.x,CY+bb.y);ctx.stroke();}}sorted.forEach(p=>{const dep=(p.z+R)/(2*R),op=dep*.85+.1;const sz=booted?p.size*dep*(1+Math.sin(pulse+dep)*.15):p.size*dep;ctx.beginPath();ctx.arc(CX+p.x,CY+p.y,sz,0,Math.PI*2);ctx.fillStyle=`rgba(${r},${g},${b},${op})`;ctx.fill();});const gR=booted?40+Math.sin(pulse)*8:24;const gw=ctx.createRadialGradient(CX,CY,0,CX,CY,gR);gw.addColorStop(0,`rgba(${r},${g},${b},${booted?.22:.1})`);gw.addColorStop(1,'transparent');ctx.fillStyle=gw;ctx.fillRect(0,0,W,H);requestAnimationFrame(draw);}draw();})();
+function draw(){ctx.clearRect(0,0,W,H);rot+=booted?.006:.002;pulse+=.04;const cos=Math.cos(rot),sin=Math.sin(rot);pts.forEach(p=>{p.x=p.ox*cos-p.oz*sin;p.y=p.oy;p.z=p.ox*sin+p.oz*cos;});const sorted=[...pts].sort((a,b)=>a.z-b.z);const[r,g,b]=getColor();ctx.lineWidth=.35;for(let i=0;i<sorted.length;i++)for(let j=i+1;j<sorted.length;j++){const a=sorted[i],bb=sorted[j];const d=Math.sqrt((a.x-bb.x)**2+(a.y-bb.y)**2+(a.z-bb.z)**2);if(d<40){const op=(1-d/40)*0.22*(a.z+R)/(2*R)*(bb.z+R)/(2*R);ctx.strokeStyle=`rgba(${r},${g},${b},${op})`;ctx.beginPath();ctx.moveTo(CX+a.x,CY+a.y);ctx.lineTo(CX+bb.x,CY+bb.y);ctx.stroke();}}sorted.forEach(p=>{const dep=(p.z+R)/(2*R),op=dep*.85+.1;const sz=booted?p.size*dep*(1+Math.sin(pulse+dep)*.15):p.size*dep;ctx.beginPath();ctx.arc(CX+p.x,CY+p.y,sz,0,Math.PI*2);ctx.fillStyle=`rgba(${r},${g},${b},${op})`;ctx.fill();});const gR=booted?36+Math.sin(pulse)*8:22;const gw=ctx.createRadialGradient(CX,CY,0,CX,CY,gR);gw.addColorStop(0,`rgba(${r},${g},${b},${booted?.2:.1})`);gw.addColorStop(1,'transparent');ctx.fillStyle=gw;ctx.fillRect(0,0,W,H);requestAnimationFrame(draw);}draw();})();
 
-setTimeout(()=>{addTele(`[${ts()}] JARVIS v1.0 READY`,'hi');addTele(`[${ts()}] SDK LOADING FROM CDN`);},500);
+setTimeout(()=>{addTele(`[${ts()}] JARVIS v1.0 READY`,'hi');addTele(`[${ts()}] CLICK START CALL IN NEURAL INTERFACE`);},600);
 </script>
 </body>
 </html>
